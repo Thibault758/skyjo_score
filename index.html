@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Scorekeeper Skyjo — Vue 3</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 20px; background:#f7fafc; color:#0f172a }
+        .container { max-width: 980px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 6px 18px rgba(2,6,23,0.08) }
+        input[type="number"] { width: 70px; }
+        table { width:100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { padding: 8px 10px; border: 1px solid #e6edf3; text-align: center; }
+        th { background: #f1f5f9; }
+        .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+        .btn { padding:6px 10px; border-radius:6px; background:#2563eb; color:white; cursor:pointer; border: none }
+        .btn.ghost { background:#fff; color:#2563eb; border:1px solid #c7d2fe }
+        .btn.danger { background:#dc2626 }
+        .total { font-weight:700; font-size:1rem }
+        .winner { background: #d1fae5 }
+        .loser { background: #fff1f2 }
+        .small { font-size:0.9rem; color:#475569 }
+        .footer { margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap }
+    </style>
+</head>
+<body>
+<div id="app" class="container">
+    <h2>Scorekeeper Skyjo</h2>
+    <div class="controls">
+        <input v-model="newPlayer" @keyup.enter="addPlayer" placeholder="Nom du joueur" />
+        <button class="btn" @click="addPlayer" :disabled="!newPlayer">Ajouter joueur</button>
+        <button class="btn ghost" @click="resetGame" v-if="players.length">Réinitialiser partie</button>
+        <label class="small">Seuil fin (ex: 100): <input type="number" v-model.number="endThreshold" min="1" style="width:90px;margin-left:6px"></label>
+        <button class="btn" @click="addRound" :disabled="players.length===0">Ajouter round</button>
+        <button class="btn danger" @click="removeLastRound" :disabled="rounds.length===0">Suppr. dernier round</button>
+    </div>
+
+    <div class="small">Astuce : les valeurs peuvent être négatives (ex: -2). Appuie Entrée pour ajouter un joueur.</div>
+
+    <table v-if="players.length">
+        <thead>
+        <tr>
+            <th>Round</th>
+            <th v-for="p in players" :key="'h-'+p.id">{{ p.name }}
+                <button class="btn ghost" style="margin-left:6px;padding:2px 6px" @click="removePlayer(p.id)" title="Supprimer joueur">✖</button>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="(r, ri) in rounds" :key="r.id">
+            <td>R{{ ri+1 }}</td>
+            <td v-for="p in players" :key="r.id+'-'+p.id">
+                <input type="number" v-model.number="r.scores[p.id]" @input="sanitizeScore(r, p.id)" />
+            </td>
+        </tr>
+
+        <tr>
+            <td class="total">Total</td>
+            <td v-for="p in players" :key="'total-'+p.id"
+                :class="{'winner': isWinner(p.id), 'loser': isLoser(p.id)}" class="total">
+                {{ totals[p.id] ?? 0 }}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div v-else class="small">Ajoute des joueurs pour commencer.</div>
+
+    <div class="footer">
+        <div>
+            <div v-if="gameFinished" style="padding:8px;border-radius:6px;background:#f1fdf8;color:#064e3b">
+                🎉 Partie terminée — atteinte du seuil ({{ endThreshold }}) ! Gagnant(s): <strong>{{ winnersNames.join(', ') }}</strong>
+            </div>
+            <div v-else class="small">Partie en cours — aucun joueur n'a atteint le seuil.</div>
+        </div>
+
+        <div>
+            <button class="btn" @click="exportCSV" :disabled="rounds.length===0">Exporter CSV</button>
+            <button class="btn ghost" @click="importSample">Charger exemple</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, reactive, computed } = Vue;
+
+    createApp({
+        setup() {
+            const state = reactive({
+                newPlayer: '',
+                players: [], // {id, name}
+                rounds: [], // {id, scores: { playerId: number }}
+                endThreshold: 100
+            });
+
+            const uid = () => Math.random().toString(36).slice(2,9);
+
+            function addPlayer() {
+                const name = state.newPlayer && state.newPlayer.trim();
+                if (!name) return;
+                const id = uid();
+                state.players.push({ id, name });
+                // update existing rounds with 0 for this player
+                state.rounds.forEach(r => r.scores[id] = 0);
+                state.newPlayer = '';
+            }
+
+            function removePlayer(id) {
+                state.players = state.players.filter(p => p.id !== id);
+                // remove from rounds
+                state.rounds.forEach(r => { delete r.scores[id]; });
+            }
+
+            function addRound() {
+                const r = { id: uid(), scores: {} };
+                // init scores to 0 for each player
+                state.players.forEach(p => r.scores[p.id] = 0);
+                state.rounds.push(r);
+            }
+
+            function removeLastRound() {
+                if (state.rounds.length) state.rounds.pop();
+            }
+
+            function resetGame() {
+                if (!confirm('Réinitialiser la partie ? Tous les scores seront perdus.')) return;
+                state.players = [];
+                state.rounds = [];
+                state.endThreshold = 100;
+                state.newPlayer = '';
+            }
+
+            function sanitizeScore(round, pid) {
+                // ensure number (empty -> 0)
+                const v = round.scores[pid];
+                if (v === '' || v === null || typeof v === 'undefined' || isNaN(v)) round.scores[pid] = 0;
+                else round.scores[pid] = Number(v);
+            }
+
+            const totals = computed(() => {
+                const map = {};
+                state.players.forEach(p => map[p.id] = 0);
+                state.rounds.forEach(r => {
+                    state.players.forEach(p => {
+                        const val = Number(r.scores[p.id] || 0);
+                        map[p.id] += val;
+                    });
+                });
+                return map;
+            });
+
+            const gameFinished = computed(() => {
+                return state.players.some(p => totals.value[p.id] >= state.endThreshold);
+            });
+
+            function isWinner(pid) {
+                if (!state.players.length) return false;
+                // winner = lowest total among players (Skyjo: lowest score wins)
+                const min = Math.min(...Object.values(totals.value));
+                return totals.value[pid] === min;
+            }
+            function isLoser(pid) {
+                // highlight players above threshold
+                return totals.value[pid] >= state.endThreshold;
+            }
+
+            const winnersNames = computed(() => {
+                if (!state.players.length) return [];
+                const min = Math.min(...Object.values(totals.value));
+                return state.players.filter(p => totals.value[p.id] === min).map(p => p.name);
+            });
+
+            function exportCSV() {
+                // Build CSV: header round + players; rows per round; then totals row
+                const header = ['Round', ...state.players.map(p => p.name)];
+                const rows = state.rounds.map((r, idx) => {
+                    return [ 'R' + (idx+1), ...state.players.map(p => r.scores[p.id] ?? 0) ];
+                });
+                const totalsRow = ['Total', ...state.players.map(p => totals.value[p.id] ?? 0)];
+                const csv = [header, ...rows, totalsRow].map(r => r.join(';')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'skyjo_scores.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function importSample() {
+                // example: 3 players, 4 rounds
+                state.players = [
+                    { id: 'p1', name: 'Alice' },
+                    { id: 'p2', name: 'Bob' },
+                    { id: 'p3', name: 'Clara' }
+                ];
+                state.rounds = [
+                    { id: 'r1', scores: { p1: 3, p2: 8, p3: 5 } },
+                    { id: 'r2', scores: { p1: 4, p2: 2, p3: 7 } },
+                    { id: 'r3', scores: { p1: -2, p2: 10, p3: 6 } },
+                    { id: 'r4', scores: { p1: 6, p2: 5, p3: 10 } }
+                ];
+            }
+
+            return {
+                ...Vue.toRefs(state),
+                addPlayer, removePlayer, addRound, removeLastRound, resetGame,
+                totals, sanitizeScore, exportCSV, importSample,
+                gameFinished, isWinner, isLoser, winnersNames
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
