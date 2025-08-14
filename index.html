@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <title>Scorekeeper Skyjo — Vue 3</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <style>
@@ -190,15 +190,14 @@
             function importSample() {
                 // example: 3 players, 4 rounds
                 state.players = [
-                    { id: 'p1', name: 'Alice' },
-                    { id: 'p2', name: 'Bob' },
-                    { id: 'p3', name: 'Clara' }
+                    { id: 'p1', name: "Sach" },
+                    { id: 'p2', name: "Tib'z" },
                 ];
                 state.rounds = [
-                    { id: 'r1', scores: { p1: 3, p2: 8, p3: 5 } },
-                    { id: 'r2', scores: { p1: 4, p2: 2, p3: 7 } },
-                    { id: 'r3', scores: { p1: -2, p2: 10, p3: 6 } },
-                    { id: 'r4', scores: { p1: 6, p2: 5, p3: 10 } }
+                    { id: 'r1', scores: { p1: 3, p2: 8 } },
+                    { id: 'r2', scores: { p1: 4, p2: 2 } },
+                    { id: 'r3', scores: { p1: -2, p2: 10 } },
+                    { id: 'r4', scores: { p1: 6, p2: 5 } }
                 ];
             }
 
