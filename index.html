@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <meta name="color-scheme" content="light">
-    <title>Scorekeeper Skyjo — Vue 3</title>
+    <title>TitiScore Skyjo</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <style>
         :root {color-scheme: light;}
@@ -51,20 +51,22 @@
 </head>
 <body>
 <div id="app" class="container">
-    <div style="display: flex; align-items: center; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 25px;">
         <img src="skyjo.jpg" alt="Skyjo" style="width: 40px; height: auto;">
-        <h2>TitiScore <span style="color:#6A0DAD">S</span><span style="color:#2196F3">k</span><span style="color:#4CAF50">y</span><span style="color:#FBC02D">j</span><span style="color:#F44336">o</span></h2>
+        <h2 style="margin: 0; font-size: 30px;">TitiScore <span style="color:#6A0DAD">S</span><span style="color:#2196F3">k</span><span style="color:#4CAF50">y</span><span style="color:#FBC02D">j</span><span style="color:#F44336">o</span></h2>
     </div>
     <div class="controls">
-        <input v-model="newPlayer" @keyup.enter="addPlayer" placeholder="Nom du joueur" />
+        <input v-model="newPlayer" @keyup.enter="addPlayer" placeholder="Nom du joueur" style="font-size: 17px" />
         <button class="btn" @click="addPlayer" :disabled="!newPlayer">Ajouter joueur</button>
         <button class="btn ghost" @click="resetGame" v-if="players.length">Réinitialiser partie</button>
-        <label class="small">Seuil fin (ex: 100): <input type="number" v-model.number="endThreshold" min="1" style="width:90px;margin-left:6px"></label>
-        <button class="btn" @click="addRound" :disabled="players.length===0">Ajouter round</button>
-        <button class="btn danger" @click="removeLastRound" :disabled="rounds.length===0">Suppr. dernier round</button>
+        <label class="small" style="margin-top: 10px;">Seuil fin (ex: 100): <input type="number" v-model.number="endThreshold" min="1" style="width:90px;margin-left:6px"></label>
+        <div v-if="players.length > 0">
+            <button class="btn" @click="addRound" :disabled="players.length===0">Ajouter round</button>
+            <button class="btn danger" @click="removeLastRound" :disabled="rounds.length===0">Suppr. dernier round</button>
+        </div>
     </div>
 
-    <div class="small">Astuce : les valeurs peuvent être négatives (ex: -2). Appuie Entrée pour ajouter un joueur.</div>
+    <div v-if="players.length > 0"><i style="font-size: 11px">Astuce : les valeurs peuvent être négatives (ex: -2). Appuie Entrée pour ajouter un joueur.</i></div>
     <div v-if="!isLandscape && players.length > 2" class="rotate-info">Bascule le téléphone en mode paysage mon sauce 👀</div>
 
     <table v-if="players.length">
@@ -94,21 +96,23 @@
         </tbody>
     </table>
 
-    <div v-else class="small">Ajoute des joueurs pour commencer.</div>
-
-    <div class="footer">
-        <div>
-            <div v-if="gameFinished" style="padding:8px;border-radius:6px;background:#f1fdf8;color:#064e3b">
-                🎉 Partie terminée — atteinte du seuil ({{ endThreshold }}) ! Gagnant(s): <strong>{{ winnersNames.join(', ') }}</strong>
-            </div>
-            <div v-else class="small">Partie en cours — aucun joueur n'a atteint le seuil.</div>
+    <div style="margin: 10px 0;">
+        <div v-if="gameFinished" style="padding:8px;border-radius:6px;background:#f1fdf8;color:#064e3b">
+            🎉 Partie terminée — atteinte du seuil ({{ endThreshold }}) ! Gagnant(s): <strong>{{ winnersNames.join(', ') }}</strong>
         </div>
-
-        <div>
-            <button class="btn" @click="exportCSV" :disabled="rounds.length===0">Exporter CSV</button>
-            <button class="btn ghost" @click="importSample">Charger exemple</button>
-        </div>
+        <div v-if="!gameFinished && players.length > 0" class="small">Partie en cours — aucun joueur n'a atteint le seuil.</div>
     </div>
+
+    <div>
+        <button class="btn" @click="exportCSV" :disabled="rounds.length===0">Exporter CSV</button>
+        <button class="btn ghost" @click="importSample">Charger exemple</button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 5px; margin-top: 12px;">
+        <img src="skyjo2.jpg" alt="Skyjo" style="width: 30px; height: auto;">
+        <i style="font-size: 10px;">Merci d'avoir game avec TitiScore 👍</i>
+    </div>
+
 </div>
 
 <script>
