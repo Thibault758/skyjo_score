@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF9800">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <meta name="color-scheme" content="light">
@@ -257,6 +259,12 @@
             };
         }
     }).mount('#app');
+
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js")
+            .then(() => console.log("Service Worker enregistré"))
+            .catch(err => console.error("Erreur SW :", err));
+    }
 </script>
 </body>
 </html>
