@@ -21,6 +21,20 @@
         .loser { background: #fff1f2 }
         .small { font-size:0.9rem; color:#475569 }
         .footer { margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap }
+       /* .rotate-info { font-size: 15px; color: white; background-color: #D72626; padding: 10px; border-radius: 6px; margin: 10px 0; }*/
+        .rotate-info {
+            background-color: #FF9800;
+            color: #000;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .rotate-info::before {
+            content: "🔄️";
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -36,6 +50,7 @@
     </div>
 
     <div class="small">Astuce : les valeurs peuvent être négatives (ex: -2). Appuie Entrée pour ajouter un joueur.</div>
+    <div v-if="!isLandscape && players.length > 2" class="rotate-info">Bascule le téléphone en mode paysage mon sauce 👀</div>
 
     <table v-if="players.length">
         <thead>
@@ -82,7 +97,7 @@
 </div>
 
 <script>
-    const { createApp, reactive, computed } = Vue;
+    const { createApp, reactive, computed, onMounted, onBeforeUnmount } = Vue;
 
     createApp({
         setup() {
@@ -90,10 +105,24 @@
                 newPlayer: '',
                 players: [], // {id, name}
                 rounds: [], // {id, scores: { playerId: number }}
-                endThreshold: 100
+                endThreshold: 100,
+                isLandscape: false
             });
 
             const uid = () => Math.random().toString(36).slice(2,9);
+
+            const checkOrientation = () => {
+                state.isLandscape = window.innerWidth > window.innerHeight
+            }
+
+            onMounted(() => {
+                checkOrientation()
+                window.addEventListener('resize', checkOrientation)
+            })
+
+            onBeforeUnmount(() => {
+                window.removeEventListener('resize', checkOrientation)
+            })
 
             function addPlayer() {
                 const name = state.newPlayer && state.newPlayer.trim();
