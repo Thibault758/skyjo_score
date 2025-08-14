@@ -39,7 +39,10 @@
 </head>
 <body>
 <div id="app" class="container">
-    <h2>Scorekeeper Skyjo</h2>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="skyjo.jpg" alt="Skyjo" style="width: 40px; height: auto;">
+        <h2>TitiScore Skyjo</h2>
+    </div>
     <div class="controls">
         <input v-model="newPlayer" @keyup.enter="addPlayer" placeholder="Nom du joueur" />
         <button class="btn" @click="addPlayer" :disabled="!newPlayer">Ajouter joueur</button>
