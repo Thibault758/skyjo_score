@@ -100,7 +100,7 @@
                 if (!name) return;
                 const id = uid();
                 state.players.push({ id, name });
-                // update existing rounds with 0 for this player
+                state.rounds.length === 0 && addRound()
                 state.rounds.forEach(r => r.scores[id] = 0);
                 state.newPlayer = '';
             }
