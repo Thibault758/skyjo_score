@@ -84,7 +84,7 @@
         <tr v-for="(r, ri) in rounds" :key="r.id">
             <td>R{{ ri+1 }}</td>
             <td v-for="p in players" :key="r.id+'-'+p.id">
-                <input type="number" v-model.number="r.scores[p.id]" @input="sanitizeScore(r, p.id)" />
+                <input type="number" v-model.number="r.scores[p.id]"/>
             </td>
         </tr>
 
@@ -180,13 +180,6 @@
                 state.newPlayer = '';
             }
 
-            function sanitizeScore(round, pid) {
-                // ensure number (empty -> 0)
-                const v = round.scores[pid];
-                if (v === '' || v === null || typeof v === 'undefined' || isNaN(v)) round.scores[pid] = 0;
-                else round.scores[pid] = Number(v);
-            }
-
             const totals = computed(() => {
                 const map = {};
                 state.players.forEach(p => map[p.id] = 0);
@@ -254,7 +247,7 @@
             return {
                 ...Vue.toRefs(state),
                 addPlayer, removePlayer, addRound, removeLastRound, resetGame,
-                totals, sanitizeScore, exportCSV, importSample,
+                totals, exportCSV, importSample,
                 gameFinished, isWinner, isLoser, winnersNames
             };
         }
